@@ -4,8 +4,11 @@ import java.time.LocalDateTime;
 
 import com.cers.testecrudrafael.models.Message;
 import com.cers.testecrudrafael.repositories.MessageRepository;
+import com.cers.testecrudrafael.utils.Status;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,13 +30,23 @@ public class MessageController {
 
     @GetMapping
     public Iterable<Message> getMessages() {
-        return _messageRepository.findAll();
+        return _messageRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/unchecked")
+    public Iterable<Message> getMessageThatIsNotChecked() {
+        return _messageRepository.findByStatusOrderByCreatedAtDesc(Status.NOT_CHECKED);
+    }
+
+    @GetMapping("/id/{id}")
     public ResponseEntity<Message> getMessageById(@PathVariable int id) {
         return _messageRepository.findById(id).map(record -> ResponseEntity.ok().body(record))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/count")
+    public ResponseEntity<Long> getMessagesCount() {
+        return ResponseEntity.ok().body(_messageRepository.count());
     }
 
     @PostMapping
@@ -42,6 +55,7 @@ public class MessageController {
         newMessage.setTitle(message.getTitle());
         newMessage.setDescription(message.getDescription());
         newMessage.setCreatedAt(LocalDateTime.now());
+        newMessage.setStatus(Status.NOT_CHECKED);
 
         return _messageRepository.save(newMessage);
     }
@@ -51,6 +65,26 @@ public class MessageController {
         return _messageRepository.findById(id).map(record -> {
             record.setTitle(message.getTitle());
             record.setDescription(message.getDescription());
+            record.setUpdatedAt(LocalDateTime.now());
+            Message updated = _messageRepository.save(record);
+            return ResponseEntity.ok().body(updated);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/check/{id}")
+    public ResponseEntity<Message> checkMessage(@PathVariable int id) {
+        return _messageRepository.findById(id).map(record -> {
+            record.setStatus(Status.CHECKED);
+            record.setUpdatedAt(LocalDateTime.now());
+            Message updated = _messageRepository.save(record);
+            return ResponseEntity.ok().body(updated);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/uncheck/{id}")
+    public ResponseEntity<Message> uncheckMessage(@PathVariable int id) {
+        return _messageRepository.findById(id).map(record -> {
+            record.setStatus(Status.NOT_CHECKED);
             record.setUpdatedAt(LocalDateTime.now());
             Message updated = _messageRepository.save(record);
             return ResponseEntity.ok().body(updated);

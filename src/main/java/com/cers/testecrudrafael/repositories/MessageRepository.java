@@ -1,11 +1,14 @@
 package com.cers.testecrudrafael.repositories;
 
-import com.cers.testecrudrafael.models.Message;
+import java.util.List;
 
-import org.springframework.data.repository.CrudRepository;
+import com.cers.testecrudrafael.models.Message;
+import com.cers.testecrudrafael.utils.Status;
+
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MessageRepository extends CrudRepository<Message, Integer> {
-
+public interface MessageRepository extends JpaRepository<Message, Integer> {
+    List<Message> findByStatusOrderByCreatedAtDesc(Status status);
 }
